@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        container: [ubuntu:latest, debian:latest, centos:latest, alpine:latest]
+        container: [ubuntu:latest, debian:latest, centos:stream9, alpine:latest]
     container: ${{ matrix.container }}
 
     steps:
