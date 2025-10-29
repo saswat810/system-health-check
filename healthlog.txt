@@ -1,0 +1,274 @@
+=============================================
+System Health Check - 2025-10-29 18:42:34
+=============================================
+System Date and Time: Wed Oct 29 18:42:34 UTC 2025
+
+System Uptime:
+ 18:42:34 up 0 min,  0 users,  load average: 1.18, 0.30, 0.10
+
+CPU Load:
+ 1.18, 0.30, 0.10
+
+Memory Usage (in MB):
+               total        used        free      shared  buff/cache   available
+Mem:           15995         867       13716          43        1761       15127
+Swap:           4095           0        4095
+
+Disk Usage:
+Filesystem      Size  Used Avail Use% Mounted on
+overlay          72G   50G   23G  70% /
+tmpfs            64M     0   64M   0% /dev
+shm              64M     0   64M   0% /dev/shm
+/dev/root        72G   50G   23G  70% /__w
+tmpfs           3.2G  1.2M  3.2G   1% /run/docker.sock
+tmpfs           7.9G     0  7.9G   0% /proc/acpi
+tmpfs           7.9G     0  7.9G   0% /proc/scsi
+tmpfs           7.9G     0  7.9G   0% /sys/firmware
+
+Top 5 Memory Consuming Processes:
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         469  0.0  0.0   6396  3732 ?        R    18:42   0:00 ps aux --sort=-%mem
+root         459  0.0  0.0   4068  3208 ?        S    18:42   0:00 /bin/bash ./healthcheck.sh
+root         461  0.0  0.0   4068  2056 ?        S    18:42   0:00 /bin/bash ./healthcheck.sh
+root         452 25.0  0.0   2680  1668 ?        Ss   18:42   0:00 sh -e /__w/_temp/c7e4c122-e9ed-43b8-bfd8-1631b5ee6a0d.sh
+root           1  0.2  0.0   2624  1456 ?        Ss   18:42   0:00 tail -f /dev/null
+
+Service Status Check (nginx, ssh):
+nginx: Not Running
+ssh: Not Running
+
+Health check completed at: 2025-10-29 18:42:34
+=============================================
+=============================================
+System Health Check - 2025-10-29 18:42:32
+=============================================
+System Date and Time: Wed Oct 29 18:42:32 UTC 2025
+
+System Uptime:
+ 18:42:32 up 5 min,  0 user,  load average: 0.28, 0.09, 0.02
+
+CPU Load:
+ 0.28, 0.09, 0.02
+
+Memory Usage (in MB):
+               total        used        free      shared  buff/cache   available
+Mem:           15995         949       13788          44        1601       15045
+Swap:           4095           0        4095
+
+Disk Usage:
+Filesystem      Size  Used Avail Use% Mounted on
+overlay          72G   50G   23G  70% /
+tmpfs            64M     0   64M   0% /dev
+shm              64M     0   64M   0% /dev/shm
+/dev/root        72G   50G   23G  70% /__w
+tmpfs           3.2G  1.2M  3.2G   1% /run/docker.sock
+tmpfs           7.9G     0  7.9G   0% /proc/acpi
+tmpfs           7.9G     0  7.9G   0% /proc/scsi
+tmpfs           7.9G     0  7.9G   0% /sys/firmware
+
+Top 5 Memory Consuming Processes:
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root          59  0.0  0.0   7116  2496 ?        S    18:42   0:00 tee healthlog.txt
+root          67  0.0  0.0   7112  2472 ?        S    18:42   0:00 head -n 6
+root          66  0.0  0.0   2856  1912 ?        R    18:42   0:00 ps aux --sort=-%mem
+root          56  0.0  0.0   2360  1772 ?        S    18:42   0:00 /bin/bash ./healthcheck.sh
+root          58  0.0  0.0   2372  1172 ?        S    18:42   0:00 /bin/bash ./healthcheck.sh
+
+Service Status Check (nginx, ssh):
+nginx: Not Running
+ssh: Not Running
+
+Health check completed at: 2025-10-29 18:42:32
+=============================================
+=============================================
+System Health Check (Windows) - 2025-10-29_18-42-35
+=============================================
+
+OS Information:
+OS Name:                       Microsoft Windows Server 2025 Datacenter
+OS Version:                    10.0.26100 N/A Build 26100
+
+Uptime:
+
+Wednesday, October 29, 2025 6:32:29 PM
+
+
+CPU Info:
+
+Name                                          LoadPercentage
+----                                          --------------
+Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz             29
+
+
+Memory Usage (MB):
+
+TotalVisibleMemorySize FreePhysicalMemory
+---------------------- ------------------
+              16776756           13903508
+
+
+Disk Usage:
+
+Name         Used         Free
+----         ----         ----
+C    121952743424  38582140928
+D      3203837952 157855334400
+Temp 121952743424  38582140928
+
+
+Top Processes by Memory:
+
+Name                     CPU        WS
+----                     ---        --
+hosted-compute-agent    2.86 288231424
+explorer                6.72 161374208
+StartMenuExperienceHost 2.06 133615616
+pwsh                    1.78 117907456
+SearchHost              3.31 113152000
+
+
+Service Status (wuauserv, sshd):
+
+Name      Status
+----      ------
+sshd     Running
+wuauserv Running
+
+=============================================
+System Health Check (macOS) - Wed Oct 29 18:42:30 UTC 2025
+=============================================
+
+System Uptime:
+18:42  up 1 min, 1 user, load averages: 27.65 13.31 5.40
+
+CPU Load:
+{ 27.65 13.31 5.40 }
+
+Memory Usage:
+Mach Virtual Memory Statistics: (page size of 16384 bytes)
+Pages free:                                7005.
+Pages active:                            197356.
+Pages inactive:                          190179.
+Pages speculative:                        10258.
+Pages throttled:                              0.
+Pages wired down:                         48906.
+Pages purgeable:                           1304.
+"Translation faults":                   1798747.
+Pages copy-on-write:                     196441.
+Pages zero filled:                       618499.
+Pages reactivated:                        31084.
+Pages purged:                              2088.
+File-backed pages:                       202713.
+Anonymous pages:                         195080.
+Pages stored in compressor:               14781.
+Pages occupied by compressor:              3801.
+Decompressions:                             899.
+Compressions:                             16494.
+Pageins:                                 235922.
+Pageouts:                                  1139.
+Swapins:                                      0.
+Swapouts:                                     0.
+
+Disk Usage:
+Filesystem        Size    Used   Avail Capacity iused ifree %iused  Mounted on
+/dev/disk3s1s1   320Gi    10Gi    79Gi    12%    426k  827M    0%   /
+devfs            198Ki   198Ki     0Bi   100%     684     0  100%   /dev
+/dev/disk3s6     320Gi    20Ki    79Gi     1%       0  827M    0%   /System/Volumes/VM
+/dev/disk3s2     320Gi   6.8Gi    79Gi     8%    1.1k  827M    0%   /System/Volumes/Preboot
+/dev/disk3s4     320Gi    40Mi    79Gi     1%      53  827M    0%   /System/Volumes/Update
+/dev/disk1s2     500Mi    20Ki   495Mi     1%       0  5.1M    0%   /System/Volumes/xarts
+/dev/disk1s1     500Mi   116Ki   495Mi     1%      25  5.1M    0%   /System/Volumes/iSCPreboot
+/dev/disk1s3     500Mi   224Ki   495Mi     1%      18  5.1M    0%   /System/Volumes/Hardware
+/dev/disk3s5     320Gi   222Gi    79Gi    74%    1.9M  827M    0%   /System/Volumes/Data
+/dev/disk5s1     4.0Mi   676Ki   3.0Mi    19%      18   31k    0%   /System/Library/AssetsV2/com_apple_MobileAsset_PKITrustStore/purpose_auto/6dd55b0d06633a00de6f57ccb910a66a5ba2409a.asset/.AssetData
+map auto_home      0Bi     0Bi     0Bi   100%       0     0     -   /System/Volumes/Data/home
+
+Top 5 Memory Consuming Processes:
+runner             500   0.0  3.1 427464128 229200   ??  Ss    6:41PM   0:00.66 /System/Library/Frameworks/Speech.framework/Versions/A/XPCServices/localspeechrecognition.xpc/Contents/MacOS/localspeechrecognition
+root               267   1.8  1.9 430619120 139744   ??  Us    6:41PM   0:00.67 /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mds_stores
+runner            1100  56.4  1.5 412674752 109200   ??  S<    6:42PM   0:00.54 /Users/runner/actions-runner/cached/bin/Runner.Worker spawnclient 144 147
+runner            1076  16.5  1.4 412541952 104048   ??  S<    6:42PM   0:00.71 /Users/runner/actions-runner/cached/bin/Runner.Listener run
+runner             868   0.0  1.3 426915344  98080   ??  S     6:41PM   0:01.16 /System/Library/PrivateFrameworks/MediaAnalysis.framework/Versions/A/mediaanalysisd
+runner             872   0.0  1.1 427120800  77456   ??  Ss    6:41PM   0:00.26 /System/Volumes/Preboot/Cryptexes/App/System/Applications/Safari.app/Contents/Extensions/SafariLinkExtension.appex/Contents/MacOS/SafariLinkExtension
+=============================================
+System Health Check - 2025-10-29 18:42:35
+=============================================
+System Date and Time: Wed Oct 29 18:42:35 UTC 2025
+
+System Uptime:
+ 18:42:35 up 1 min,  0 user,  load average: 0.50, 0.26, 0.10
+
+CPU Load:
+ 0.50, 0.26, 0.10
+
+Memory Usage (in MB):
+               total        used        free      shared  buff/cache   available
+Mem:           15995         891       13717          43        1733       15103
+Swap:           4095           0        4095
+
+Disk Usage:
+Filesystem      Size  Used Avail Use% Mounted on
+overlay          72G   50G   23G  70% /
+tmpfs            64M     0   64M   0% /dev
+shm              64M     0   64M   0% /dev/shm
+/dev/root        72G   50G   23G  70% /__t
+tmpfs           3.2G  1.2M  3.2G   1% /run/docker.sock
+tmpfs           7.9G     0  7.9G   0% /proc/acpi
+tmpfs           7.9G     0  7.9G   0% /proc/scsi
+tmpfs           7.9G     0  7.9G   0% /sys/firmware
+
+Top 5 Memory Consuming Processes:
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         322  0.0  0.0   7888  4048 ?        R    18:42   0:00 ps aux --sort=-%mem
+root         312  0.0  0.0   4324  3376 ?        S    18:42   0:00 /bin/bash ./healthcheck.sh
+root         314  0.0  0.0   4324  2076 ?        S    18:42   0:00 /bin/bash ./healthcheck.sh
+root         305 33.3  0.0   2800  1528 ?        Ss   18:42   0:00 sh -e /__w/_temp/022cbba6-d905-4201-981c-5ba10181dc0c.sh
+root         323  0.0  0.0   2708  1444 ?        S    18:42   0:00 head -n 6
+
+Service Status Check (nginx, ssh):
+nginx: Not Running
+ssh: Not Running
+
+Health check completed at: 2025-10-29 18:42:35
+=============================================
+=============================================
+System Health Check - 2025-10-29 18:42:43
+=============================================
+System Date and Time: Wed Oct 29 18:42:43 UTC 2025
+
+System Uptime:
+ 18:42:43 up 0 min,  0 user,  load average: 0.63, 0.17, 0.06
+
+CPU Load:
+ 0.63, 0.17, 0.06
+
+Memory Usage (in MB):
+               total        used        free      shared  buff/cache   available
+Mem:           15994         857       13531          43        1964       15137
+Swap:           4095           0        4095
+
+Disk Usage:
+Filesystem      Size  Used Avail Use% Mounted on
+overlay          72G   50G   22G  70% /
+tmpfs            64M     0   64M   0% /dev
+shm              64M     0   64M   0% /dev/shm
+/dev/root        72G   50G   22G  70% /__t
+tmpfs           3.2G  1.2M  3.2G   1% /run/docker.sock
+tmpfs           7.9G     0  7.9G   0% /proc/acpi
+tmpfs           7.9G     0  7.9G   0% /proc/scsi
+tmpfs           7.9G     0  7.9G   0% /sys/firmware
+
+Top 5 Memory Consuming Processes:
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         151  0.0  0.0   6532  3964 ?        R    18:42   0:00 ps aux --sort=-%mem
+root         141  0.0  0.0   4116  3300 ?        S    18:42   0:00 /bin/bash ./healthcheck.sh
+root         134 25.0  0.0   4116  3236 ?        Ss   18:42   0:00 sh -e /__w/_temp/e3a52f86-ab6a-465c-b406-15b40a003225.sh
+root         143  0.0  0.0   4116  2132 ?        S    18:42   0:00 /bin/bash ./healthcheck.sh
+root         144  0.0  0.0   2564  1640 ?        S    18:42   0:00 tee healthlog.txt
+
+Service Status Check (nginx, ssh):
+nginx: Not Running
+ssh: Not Running
+
+Health check completed at: 2025-10-29 18:42:43
+=============================================
