@@ -5,149 +5,136 @@ on:
   push:
 
 jobs:
-  # =============================
-  #  Health Check - Linux Variants
-  # =============================
-  health-check:
+  # -----------------------------
+  # Linux containers (matrix)
+  # -----------------------------
+  linux-containers:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
-          - os: ubuntu-latest
-            container: ubuntu:latest
-          - os: ubuntu-latest
-            container: debian:latest
-          - os: ubuntu-latest
-            container: fedora:latest
-          - os: ubuntu-latest
-            container: alpine:latest
-
-    container:
-      image: ${{ matrix.container }}
+        container: [ubuntu:latest, debian:latest, rockylinux:9, almalinux:9, alpine:latest]
+    container: ${{ matrix.container }}
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install basic tools
+      - name: Ensure healthcheck.sh is executable
         run: |
-          (apt-get update -y && apt-get install -y procps coreutils util-linux net-tools iproute2 psmisc) 2>/dev/null || true
-          (apk add --no-cache procps util-linux coreutils iproute2 psmisc bash) 2>/dev/null || true
-          (dnf install -y procps-ng coreutils net-tools iproute psmisc) 2>/dev/null || true
+          ls -la
+          chmod +x healthcheck.sh || true
+
+      - name: Install basic tools (if available)
+        run: |
+          if command -v apt-get >/dev/null 2>&1; then
+            apt-get update -y || true
+            apt-get install -y procps coreutils util-linux net-tools iproute2 psmisc bash || true
+          elif command -v apk >/dev/null 2>&1; then
+            apk add --no-cache procps coreutils util-linux iproute2 psmisc bash || true
+          elif command -v yum >/dev/null 2>&1; then
+            yum install -y procps-ng coreutils net-tools iproute psmisc bash || true
+          fi
 
       - name: Run health check script
         run: |
-          chmod +x healthcheck.sh
           ./healthcheck.sh
-          mkdir -p artifacts
-          SAFE_CONTAINER=$(echo "${{ matrix.container }}" | tr ':' '-' | tr '/' '-')
-          cp healthlog.txt artifacts/healthlog-${SAFE_CONTAINER}.txt
+        # If your script requires a different shell, you can set `shell: bash`
 
-      - name: Upload individual logs
+      - name: Create sanitized artifact name and set to GITHUB_ENV
+        run: |
+          # Replace colon (:) with dash (-) to make artifact name filesystem-safe
+          SANITIZED="$(echo '${{ matrix.container }}' | tr ':' '-')"
+          echo "ART_NAME=healthlog-${SANITIZED}" >> $GITHUB_ENV
+          echo "Set ART_NAME=healthlog-${SANITIZED}"
+      
+      - name: Upload log file (Linux container)
         uses: actions/upload-artifact@v4
         with:
-          name: logs-${{ matrix.os }}-${{ matrix.container }}-linux
-          path: artifacts/
+          name: ${{ env.ART_NAME }}
+          path: healthlog.txt
           if-no-files-found: warn
 
-  # =============================
-  #  Windows Health Check
-  # =============================
+  # -----------------------------
+  # Windows runner
+  # -----------------------------
   windows:
     runs-on: windows-latest
     steps:
-      - name: System Health Check (Windows)
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Generate Windows healthlog.txt
         shell: pwsh
         run: |
-          $logFile = "healthlog-windows.txt"
+          $logFile = "healthlog.txt"
           "=============================================" | Out-File $logFile
-          "System Health Check (Windows) - $(Get-Date -Format 'yyyy-MM-dd_HH-mm-ss')" | Out-File -Append $logFile
-          "=============================================" | Out-File -Append $logFile
-          "`nOS Information:" | Out-File -Append $logFile
-          systeminfo | findstr /B /C:"OS Name" /C:"OS Version" | Out-File -Append $logFile
-          "`nUptime:" | Out-File -Append $logFile
-          (Get-CimInstance Win32_OperatingSystem).LastBootUpTime | Out-File -Append $logFile
-          "`nCPU Info:" | Out-File -Append $logFile
-          Get-CimInstance Win32_Processor | Select-Object Name,LoadPercentage | Out-File -Append $logFile
-          "`nMemory Usage (MB):" | Out-File -Append $logFile
-          Get-CimInstance Win32_OperatingSystem | Select-Object TotalVisibleMemorySize,FreePhysicalMemory | Out-File -Append $logFile
-          "`nDisk Usage:" | Out-File -Append $logFile
-          Get-PSDrive -PSProvider 'FileSystem' | Select-Object Name,Used,Free | Out-File -Append $logFile
-          "`nTop Processes by Memory:" | Out-File -Append $logFile
-          Get-Process | Sort-Object -Descending WS | Select-Object -First 5 Name,CPU,WS | Out-File -Append $logFile
-          "`nService Status (wuauserv, sshd):" | Out-File -Append $logFile
-          Get-Service -Name wuauserv, sshd | Select-Object Name,Status | Out-File -Append $logFile
+          "System Health Check (Windows) - $(Get-Date)" | Out-File $logFile -Append
+          "=============================================" | Out-File $logFile -Append
 
-      - name: Upload Windows log
+          "`nOS Information:" | Out-File $logFile -Append
+          systeminfo | findstr /B /C:"OS Name" /C:"OS Version" | Out-File $logFile -Append
+
+          "`nUptime:" | Out-File $logFile -Append
+          (Get-CimInstance Win32_OperatingSystem).LastBootUpTime | Out-File $logFile -Append
+
+          "`nCPU Info:" | Out-File $logFile -Append
+          Get-CimInstance Win32_Processor | Select-Object -Property Name,LoadPercentage | Out-File $logFile -Append
+
+          "`nMemory Usage (MB):" | Out-File $logFile -Append
+          Get-CimInstance Win32_OperatingSystem | Select-Object TotalVisibleMemorySize,FreePhysicalMemory | Out-File $logFile -Append
+
+          "`nDisk Usage:" | Out-File $logFile -Append
+          Get-PSDrive -PSProvider 'FileSystem' | Select-Object Name,Used,Free | Out-File $logFile -Append
+
+          "`nTop Processes by Memory:" | Out-File $logFile -Append
+          Get-Process | Sort-Object -Descending WS | Select-Object -First 5 Name,CPU,WS | Out-File $logFile -Append
+
+          "`nService Status (wuauserv, sshd):" | Out-File $logFile -Append
+          # If sshd is not installed this will show as NotFound; keep it as example
+          Get-Service -Name wuauserv, sshd -ErrorAction SilentlyContinue | Select-Object Name,Status | Out-File $logFile -Append
+
+      - name: Upload Windows Log
         uses: actions/upload-artifact@v4
         with:
-          name: logs-windows
-          path: healthlog-windows.txt
+          name: healthlog-windows
+          path: healthlog.txt
+          if-no-files-found: warn
 
-  # =============================
-  #  macOS Health Check
-  # =============================
+  # -----------------------------
+  # macOS runner
+  # -----------------------------
   macos:
     runs-on: macos-latest
     steps:
-      - name: System Health Check (macOS)
-        run: |
-          echo "=============================================" > healthlog-macos.txt
-          echo "System Health Check (macOS) - $(date)" >> healthlog-macos.txt
-          echo "=============================================" >> healthlog-macos.txt
-          echo >> healthlog-macos.txt
-          echo "System Uptime:" >> healthlog-macos.txt
-          uptime >> healthlog-macos.txt
-          echo >> healthlog-macos.txt
-          echo "CPU Load:" >> healthlog-macos.txt
-          sysctl -n vm.loadavg >> healthlog-macos.txt
-          echo >> healthlog-macos.txt
-          echo "Memory Usage:" >> healthlog-macos.txt
-          vm_stat >> healthlog-macos.txt
-          echo >> healthlog-macos.txt
-          echo "Disk Usage:" >> healthlog-macos.txt
-          df -h >> healthlog-macos.txt
-          echo >> healthlog-macos.txt
-          echo "Top 5 Memory Consuming Processes:" >> healthlog-macos.txt
-          ps aux | sort -nrk 4 | head -n 6 >> healthlog-macos.txt
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      - name: Upload macOS log
+      - name: Run macOS health check and write to file
+        run: |
+          {
+            echo "============================================="
+            echo "System Health Check (macOS) - $(date)"
+            echo "============================================="
+            echo
+            echo "System Uptime:"
+            uptime
+            echo
+            echo "CPU Load:"
+            sysctl -n vm.loadavg || true
+            echo
+            echo "Memory Usage:"
+            vm_stat || true
+            echo
+            echo "Disk Usage:"
+            df -h
+            echo
+            echo "Top 5 Memory Consuming Processes:"
+            ps aux | sort -nrk 4 | head -n 6
+          } > healthlog.txt
+
+      - name: Upload macOS Log
         uses: actions/upload-artifact@v4
         with:
-          name: logs-macos
-          path: healthlog-macos.txt
-
-  # =============================
-  #  Merge all logs into one ZIP and upload to repo
-  # =============================
-  merge-logs:
-    runs-on: ubuntu-latest
-    needs: [health-check, windows, macos]
-    permissions:
-      contents: write
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: all-logs
-
-      - name: Combine all logs into one file
-        run: |
-          mkdir -p merged
-          find all-logs -type f -name "*.txt" -exec cat {} \; >> merged/healthlog.txt
-          zip -r merged/healthlog.zip merged/healthlog.txt
-
-      - name: Upload combined log as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: healthlog-combined
-          path: merged/healthlog.zip
-
-      - name: Commit healthlog.txt to repo
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          cp merged/healthlog.txt .
-          git add healthlog.txt
-          git commit -m "Auto-update healthlog.txt on $(date)" || echo "No changes to commit"
-          git push
+          name: healthlog-macos
+          path: healthlog.txt
+          if-no-files-found: warn
