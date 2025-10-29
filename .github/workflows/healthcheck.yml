@@ -18,12 +18,12 @@ jobs:
           - os: ubuntu-latest
             container: debian:latest
           - os: ubuntu-latest
-            container: rockylinux:9
-          - os: ubuntu-latest
-            container: almalinux:9,
+            container: fedora:latest
           - os: ubuntu-latest
             container: alpine:latest
-    container: ${{ matrix.container }}
+
+    container:
+      image: ${{ matrix.container }}
 
     steps:
       - name: Checkout repo
@@ -40,13 +40,15 @@ jobs:
           chmod +x healthcheck.sh
           ./healthcheck.sh
           mkdir -p artifacts
-          cp healthlog.txt artifacts/healthlog-${{ matrix.container }}.txt
+          SAFE_CONTAINER=$(echo "${{ matrix.container }}" | tr ':' '-' | tr '/' '-')
+          cp healthlog.txt artifacts/healthlog-${SAFE_CONTAINER}.txt
 
       - name: Upload individual logs
         uses: actions/upload-artifact@v4
         with:
-          name: logs-${{ matrix.os }}-${{ matrix.container }}
+          name: logs-${{ matrix.os }}-${{ matrix.container }}-linux
           path: artifacts/
+          if-no-files-found: warn
 
   # =============================
   #  Windows Health Check
@@ -57,32 +59,24 @@ jobs:
       - name: System Health Check (Windows)
         shell: pwsh
         run: |
-          $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
           $logFile = "healthlog-windows.txt"
-          "=============================================" | Out-File -FilePath $logFile
-          "System Health Check (Windows) - $timestamp" | Out-File -Append -FilePath $logFile
-          "=============================================" | Out-File -Append -FilePath $logFile
-
-          "`nOS Information:" | Out-File -Append -FilePath $logFile
-          systeminfo | findstr /B /C:"OS Name" /C:"OS Version" | Out-File -Append -FilePath $logFile
-
-          "`nUptime:" | Out-File -Append -FilePath $logFile
-          (Get-CimInstance Win32_OperatingSystem).LastBootUpTime | Out-File -Append -FilePath $logFile
-
-          "`nCPU Info:" | Out-File -Append -FilePath $logFile
-          Get-CimInstance Win32_Processor | Select-Object -Property Name,LoadPercentage | Out-File -Append -FilePath $logFile
-
-          "`nMemory Usage (MB):" | Out-File -Append -FilePath $logFile
-          Get-CimInstance Win32_OperatingSystem | Select-Object TotalVisibleMemorySize,FreePhysicalMemory | Out-File -Append -FilePath $logFile
-
-          "`nDisk Usage:" | Out-File -Append -FilePath $logFile
-          Get-PSDrive -PSProvider 'FileSystem' | Select-Object Name,Used,Free | Out-File -Append -FilePath $logFile
-
-          "`nTop Processes by Memory:" | Out-File -Append -FilePath $logFile
-          Get-Process | Sort-Object -Descending WS | Select-Object -First 5 Name,CPU,WS | Out-File -Append -FilePath $logFile
-
-          "`nService Status (wuauserv, sshd):" | Out-File -Append -FilePath $logFile
-          Get-Service -Name wuauserv, sshd | Select-Object Name,Status | Out-File -Append -FilePath $logFile
+          "=============================================" | Out-File $logFile
+          "System Health Check (Windows) - $(Get-Date -Format 'yyyy-MM-dd_HH-mm-ss')" | Out-File -Append $logFile
+          "=============================================" | Out-File -Append $logFile
+          "`nOS Information:" | Out-File -Append $logFile
+          systeminfo | findstr /B /C:"OS Name" /C:"OS Version" | Out-File -Append $logFile
+          "`nUptime:" | Out-File -Append $logFile
+          (Get-CimInstance Win32_OperatingSystem).LastBootUpTime | Out-File -Append $logFile
+          "`nCPU Info:" | Out-File -Append $logFile
+          Get-CimInstance Win32_Processor | Select-Object Name,LoadPercentage | Out-File -Append $logFile
+          "`nMemory Usage (MB):" | Out-File -Append $logFile
+          Get-CimInstance Win32_OperatingSystem | Select-Object TotalVisibleMemorySize,FreePhysicalMemory | Out-File -Append $logFile
+          "`nDisk Usage:" | Out-File -Append $logFile
+          Get-PSDrive -PSProvider 'FileSystem' | Select-Object Name,Used,Free | Out-File -Append $logFile
+          "`nTop Processes by Memory:" | Out-File -Append $logFile
+          Get-Process | Sort-Object -Descending WS | Select-Object -First 5 Name,CPU,WS | Out-File -Append $logFile
+          "`nService Status (wuauserv, sshd):" | Out-File -Append $logFile
+          Get-Service -Name wuauserv, sshd | Select-Object Name,Status | Out-File -Append $logFile
 
       - name: Upload Windows log
         uses: actions/upload-artifact@v4
@@ -102,23 +96,18 @@ jobs:
           echo "System Health Check (macOS) - $(date)" >> healthlog-macos.txt
           echo "=============================================" >> healthlog-macos.txt
           echo >> healthlog-macos.txt
-
           echo "System Uptime:" >> healthlog-macos.txt
           uptime >> healthlog-macos.txt
           echo >> healthlog-macos.txt
-
           echo "CPU Load:" >> healthlog-macos.txt
           sysctl -n vm.loadavg >> healthlog-macos.txt
           echo >> healthlog-macos.txt
-
           echo "Memory Usage:" >> healthlog-macos.txt
           vm_stat >> healthlog-macos.txt
           echo >> healthlog-macos.txt
-
           echo "Disk Usage:" >> healthlog-macos.txt
           df -h >> healthlog-macos.txt
           echo >> healthlog-macos.txt
-
           echo "Top 5 Memory Consuming Processes:" >> healthlog-macos.txt
           ps aux | sort -nrk 4 | head -n 6 >> healthlog-macos.txt
 
@@ -129,11 +118,13 @@ jobs:
           path: healthlog-macos.txt
 
   # =============================
-  #  Merge all logs into one ZIP
+  #  Merge all logs into one ZIP and upload to repo
   # =============================
   merge-logs:
     runs-on: ubuntu-latest
     needs: [health-check, windows, macos]
+    permissions:
+      contents: write
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -143,11 +134,20 @@ jobs:
       - name: Combine all logs into one file
         run: |
           mkdir -p merged
-          find all-logs -type f -name "*.txt" -exec cat {} >> merged/healthlog.txt \;
+          find all-logs -type f -name "*.txt" -exec cat {} \; >> merged/healthlog.txt
           zip -r merged/healthlog.zip merged/healthlog.txt
 
-      - name: Upload combined log
+      - name: Upload combined log as artifact
         uses: actions/upload-artifact@v4
         with:
           name: healthlog-combined
           path: merged/healthlog.zip
+
+      - name: Commit healthlog.txt to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          cp merged/healthlog.txt .
+          git add healthlog.txt
+          git commit -m "Auto-update healthlog.txt on $(date)" || echo "No changes to commit"
+          git push
