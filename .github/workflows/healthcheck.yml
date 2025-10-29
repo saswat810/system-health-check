@@ -35,7 +35,7 @@ jobs:
       - name: Upload log file
         uses: actions/upload-artifact@v4
         with:
-          name: healthlog-${{ matrix.container//:/- }}
+          name: ${{ format('healthlog-{0}', replace(matrix.container, ':', '-')) }}
           path: healthlog.txt
 
   # =============================
