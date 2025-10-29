@@ -1,90 +1,152 @@
-name: Multi-Platform Health Check
+name: Multi-Platform System Health Check
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
+  push:
 
 jobs:
+  # =============================
+  #  Health Check - Linux Variants
+  # =============================
   health-check:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        container: [ubuntu:latest, debian:latest, rockylinux:9, almalinux:9, alpine:latest]
-      fail-fast: false
+        include:
+          - os: ubuntu-latest
+            container: ubuntu:latest
+          - os: ubuntu-latest
+            container: debian:latest
+          - os: ubuntu-latest
+            container: fedora:latest
+          - os: ubuntu-latest
+            container: alpine:latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    container: ${{ matrix.container }}
 
-      - name: Print environment info
-        run: |
-          echo "OS: ${{ matrix.os }}" >> healthlog.txt
-          echo "Container: ${{ matrix.container }}" >> healthlog.txt
-          echo "--------------------------------" >> healthlog.txt
-          uname -a >> healthlog.txt || ver >> healthlog.txt
-          docker --version >> healthlog.txt || echo "Docker not available" >> healthlog.txt
-          echo "" >> healthlog.txt
-
-      - name: Run basic commands
-        run: |
-          echo "Running system health checks..." >> healthlog.txt
-          echo "Date: $(date)" >> healthlog.txt
-          echo "Disk usage:" >> healthlog.txt
-          df -h >> healthlog.txt || echo "Disk check skipped" >> healthlog.txt
-          echo "" >> healthlog.txt
-
-      - name: Upload individual log as artifact
-        run: |
-          safe_name=$(echo "${{ matrix.container }}" | tr ':/' '--')
-          mkdir -p artifacts
-          cp healthlog.txt "artifacts/healthlog-${{ matrix.os }}-${safe_name}.txt"
-        shell: bash
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: healthlog-${{ matrix.os }}
-          path: artifacts/
-
-  combine-results:
-    runs-on: ubuntu-latest
-    needs: [health-check]
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Download all logs
-        uses: actions/download-artifact@v4
-        with:
-          path: ./logs
-
-      - name: Combine all logs
+      - name: Install basic tools
         run: |
-          echo "===== Combined Health Logs =====" > healthlog.txt
-          for file in $(find ./logs -type f -name "*.txt"); do
-            echo "Merging $file ..." >> healthlog.txt
-            echo "" >> healthlog.txt
-            cat "$file" >> healthlog.txt
-            echo "" >> healthlog.txt
-            echo "--------------------------------" >> healthlog.txt
-          done
+          (apt-get update -y && apt-get install -y procps coreutils util-linux net-tools iproute2 psmisc) 2>/dev/null || true
+          (apk add --no-cache procps util-linux coreutils iproute2 psmisc bash) 2>/dev/null || true
+          (dnf install -y procps-ng coreutils net-tools iproute psmisc) 2>/dev/null || true
 
-      - name: Commit and push healthlog.txt
+      - name: Run health check script
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add healthlog.txt
-          git commit -m "Auto-update healthlog.txt [skip ci]" || echo "No changes to commit"
-          git push
+          chmod +x healthcheck.sh
+          ./healthcheck.sh
+          mkdir -p artifacts
+          cp healthlog.txt artifacts/healthlog-${{ matrix.container }}.txt
 
-      - name: Upload zip (backup)
-        if: failure() || always()
-        run: zip -r healthlog.zip healthlog.txt
-
-      - name: Upload zipped backup
+      - name: Upload individual logs
         uses: actions/upload-artifact@v4
         with:
-          name: healthlog-backup
-          path: healthlog.zip
+          name: logs-${{ matrix.os }}-${{ matrix.container }}
+          path: artifacts/
+
+  # =============================
+  #  Windows Health Check
+  # =============================
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: System Health Check (Windows)
+        shell: pwsh
+        run: |
+          $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
+          $logFile = "healthlog-windows.txt"
+          "=============================================" | Out-File -FilePath $logFile
+          "System Health Check (Windows) - $timestamp" | Out-File -Append -FilePath $logFile
+          "=============================================" | Out-File -Append -FilePath $logFile
+
+          "`nOS Information:" | Out-File -Append -FilePath $logFile
+          systeminfo | findstr /B /C:"OS Name" /C:"OS Version" | Out-File -Append -FilePath $logFile
+
+          "`nUptime:" | Out-File -Append -FilePath $logFile
+          (Get-CimInstance Win32_OperatingSystem).LastBootUpTime | Out-File -Append -FilePath $logFile
+
+          "`nCPU Info:" | Out-File -Append -FilePath $logFile
+          Get-CimInstance Win32_Processor | Select-Object -Property Name,LoadPercentage | Out-File -Append -FilePath $logFile
+
+          "`nMemory Usage (MB):" | Out-File -Append -FilePath $logFile
+          Get-CimInstance Win32_OperatingSystem | Select-Object TotalVisibleMemorySize,FreePhysicalMemory | Out-File -Append -FilePath $logFile
+
+          "`nDisk Usage:" | Out-File -Append -FilePath $logFile
+          Get-PSDrive -PSProvider 'FileSystem' | Select-Object Name,Used,Free | Out-File -Append -FilePath $logFile
+
+          "`nTop Processes by Memory:" | Out-File -Append -FilePath $logFile
+          Get-Process | Sort-Object -Descending WS | Select-Object -First 5 Name,CPU,WS | Out-File -Append -FilePath $logFile
+
+          "`nService Status (wuauserv, sshd):" | Out-File -Append -FilePath $logFile
+          Get-Service -Name wuauserv, sshd | Select-Object Name,Status | Out-File -Append -FilePath $logFile
+
+      - name: Upload Windows log
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-windows
+          path: healthlog-windows.txt
+
+  # =============================
+  #  macOS Health Check
+  # =============================
+  macos:
+    runs-on: macos-latest
+    steps:
+      - name: System Health Check (macOS)
+        run: |
+          echo "=============================================" > healthlog-macos.txt
+          echo "System Health Check (macOS) - $(date)" >> healthlog-macos.txt
+          echo "=============================================" >> healthlog-macos.txt
+          echo >> healthlog-macos.txt
+
+          echo "System Uptime:" >> healthlog-macos.txt
+          uptime >> healthlog-macos.txt
+          echo >> healthlog-macos.txt
+
+          echo "CPU Load:" >> healthlog-macos.txt
+          sysctl -n vm.loadavg >> healthlog-macos.txt
+          echo >> healthlog-macos.txt
+
+          echo "Memory Usage:" >> healthlog-macos.txt
+          vm_stat >> healthlog-macos.txt
+          echo >> healthlog-macos.txt
+
+          echo "Disk Usage:" >> healthlog-macos.txt
+          df -h >> healthlog-macos.txt
+          echo >> healthlog-macos.txt
+
+          echo "Top 5 Memory Consuming Processes:" >> healthlog-macos.txt
+          ps aux | sort -nrk 4 | head -n 6 >> healthlog-macos.txt
+
+      - name: Upload macOS log
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-macos
+          path: healthlog-macos.txt
+
+  # =============================
+  #  Merge all logs into one ZIP
+  # =============================
+  merge-logs:
+    runs-on: ubuntu-latest
+    needs: [health-check, windows, macos]
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-logs
+
+      - name: Combine all logs into one file
+        run: |
+          mkdir -p merged
+          find all-logs -type f -name "*.txt" -exec cat {} >> merged/healthlog.txt \;
+          zip -r merged/healthlog.zip merged/healthlog.txt
+
+      - name: Upload combined log
+        uses: actions/upload-artifact@v4
+        with:
+          name: healthlog-combined
+          path: merged/healthlog.zip
