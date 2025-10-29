@@ -32,11 +32,12 @@ jobs:
           chmod +x healthcheck.sh
           ./healthcheck.sh
 
-      - name: Upload log file
+      - name: Upload log file (Linux container)
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ format('healthlog-{0}', replace(matrix.container, ':', '-')) }}
+          name: ${{ env.ART_NAME }}
           path: healthlog.txt
+          if-no-files-found: warn
 
   # =============================
   #  Windows
