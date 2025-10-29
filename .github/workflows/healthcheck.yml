@@ -14,14 +14,15 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            container: ubuntu-latest
+            container: ubuntu:latest
           - os: ubuntu-latest
-            container: debian-latest
+            container: debian:latest
           - os: ubuntu-latest
-            container: fedora-latest
+            container: rockylinux:9
           - os: ubuntu-latest
-            container: alpine-latest
-
+            container: almalinux:9,
+          - os: ubuntu-latest
+            container: alpine:latest
     container: ${{ matrix.container }}
 
     steps:
@@ -44,8 +45,7 @@ jobs:
       - name: Upload individual logs
         uses: actions/upload-artifact@v4
         with:
-          # replace ':' with '-' for safe artifact name
-          name: logs-${{ matrix.os }}-${{ matrix.container }}-linux
+          name: logs-${{ matrix.os }}-${{ matrix.container }}
           path: artifacts/
 
   # =============================
