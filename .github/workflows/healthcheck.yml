@@ -36,10 +36,17 @@ jobs:
           echo "" >> healthlog.txt
 
       - name: Upload individual log as artifact
+        run: |
+          safe_name=$(echo "${{ matrix.container }}" | tr ':/' '--')
+          mkdir -p artifacts
+          cp healthlog.txt "artifacts/healthlog-${{ matrix.os }}-${safe_name}.txt"
+        shell: bash
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: healthlog-${{ matrix.os }}-${{ matrix.container }}
-          path: healthlog.txt
+          name: healthlog-${{ matrix.os }}
+          path: artifacts/
 
   combine-results:
     runs-on: ubuntu-latest
