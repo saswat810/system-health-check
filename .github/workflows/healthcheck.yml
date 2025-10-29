@@ -1,0 +1,43 @@
+name: System Health Check
+
+on:
+  workflow_dispatch:   
+  push:               
+
+jobs:
+  healthcheck-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Run health check script (Linux)
+        run: |
+          chmod +x healthcheck.sh
+          ./healthcheck.sh
+      - name: Upload log file
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-health-log
+          path: healthlog.txt
+
+  healthcheck-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Run health check commands (Windows)
+        shell: bash
+        run: |
+          echo "============================================="
+          echo "System Health Check (Windows) - $(date)"
+          echo "============================================="
+          systeminfo | grep "OS Name"
+          echo
+          echo "Memory Info:"
+          systeminfo | grep "Total Physical Memory"
+          echo
+          echo "Disk Info:"
+          df -h
+          echo
+          echo "Running Processes:"
+          ps aux | head -n 10
