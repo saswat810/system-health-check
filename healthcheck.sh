@@ -12,15 +12,15 @@ TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
   echo
 
   echo "System Uptime:"
-  uptime
+  uptime || echo "Uptime command not found"
   echo
 
   echo "CPU Load:"
-  uptime | awk -F'load average:' '{ print $2 }'
+  uptime | awk -F'load average:' '{ print $2 }' || echo "CPU load not available"
   echo
 
   echo "Memory Usage (in MB):"
-  free -m
+  free -m || echo "free command not found"
   echo
 
   echo "Disk Usage:"
@@ -28,7 +28,7 @@ TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
   echo
 
   echo "Top 5 Memory Consuming Processes:"
-  ps aux --sort=-%mem | head -n 6
+  ps aux --sort=-%mem | head -n 6 || echo "ps command not found"
   echo
 
   echo "Service Status Check (nginx, ssh):"

@@ -1,43 +1,104 @@
-name: System Health Check
+name: Multi-Platform System Health Check
 
 on:
-  workflow_dispatch:   
-  push:               
+  workflow_dispatch:
+  push:
 
 jobs:
-  healthcheck-linux:
+  # =============================
+  #  Linux Containers
+  # =============================
+  linux-containers:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        container: [ubuntu:latest, debian:latest, centos:latest, alpine:latest]
+
+    container: ${{ matrix.container }}
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-      - name: Run health check script (Linux)
+
+      - name: Install basic tools
+        run: |
+          apt-get update -y 2>/dev/null || true
+          apt-get install -y procps coreutils util-linux net-tools iproute2 psmisc 2>/dev/null || true
+          apk add procps util-linux coreutils iproute2 psmisc bash 2>/dev/null || true
+          yum install -y procps-ng coreutils net-tools iproute psmisc 2>/dev/null || true
+
+      - name: Run health check script
         run: |
           chmod +x healthcheck.sh
           ./healthcheck.sh
+
       - name: Upload log file
         uses: actions/upload-artifact@v4
         with:
-          name: linux-health-log
+          name: healthlog-${{ matrix.container }}
           path: healthlog.txt
 
-  healthcheck-windows:
+  # =============================
+  #  Windows
+  # =============================
+  windows:
     runs-on: windows-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-      - name: Run health check commands (Windows)
-        shell: bash
+      - name: System Health Check (Windows)
+        shell: pwsh
+        run: |
+          Write-Host "============================================="
+          Write-Host "System Health Check (Windows) - $(Get-Date)"
+          Write-Host "============================================="
+
+          Write-Host "`nOS Information:"
+          systeminfo | findstr /B /C:"OS Name" /C:"OS Version"
+
+          Write-Host "`nUptime:"
+          (Get-CimInstance Win32_OperatingSystem).LastBootUpTime
+
+          Write-Host "`nCPU Info:"
+          Get-CimInstance Win32_Processor | Select-Object -Property Name,LoadPercentage
+
+          Write-Host "`nMemory Usage (MB):"
+          Get-CimInstance Win32_OperatingSystem | Select-Object TotalVisibleMemorySize,FreePhysicalMemory
+
+          Write-Host "`nDisk Usage:"
+          Get-PSDrive -PSProvider 'FileSystem' | Select-Object Name,Used,Free
+
+          Write-Host "`nTop Processes by Memory:"
+          Get-Process | Sort-Object -Descending WS | Select-Object -First 5 Name,CPU,WS
+
+          Write-Host "`nService Status (wuauserv, sshd):"
+          Get-Service -Name wuauserv, sshd | Select-Object Name,Status
+
+  # =============================
+  #  macOS
+  # =============================
+  macos:
+    runs-on: macos-latest
+    steps:
+      - name: System Health Check (macOS)
         run: |
           echo "============================================="
-          echo "System Health Check (Windows) - $(date)"
+          echo "System Health Check (macOS) - $(date)"
           echo "============================================="
-          systeminfo | grep "OS Name"
+
+          echo "System Uptime:"
+          uptime
           echo
-          echo "Memory Info:"
-          systeminfo | grep "Total Physical Memory"
+
+          echo "CPU Load:"
+          sysctl -n vm.loadavg
           echo
-          echo "Disk Info:"
+
+          echo "Memory Usage:"
+          vm_stat
+          echo
+
+          echo "Disk Usage:"
           df -h
           echo
-          echo "Running Processes:"
-          ps aux | head -n 10
+
+          echo "Top 5 Memory Consuming Processes:"
+          ps aux | sort -nrk 4 | head -n 6
